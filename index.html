@@ -1,1 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futuristic OS</title>
+    <style>
+        /* General Styling */
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle, #000428, #004e92);
+            color: white;
+            overflow: hidden;
+        }
 
+        /* Taskbar */
+        #taskbar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 50px;
+            background: linear-gradient(90deg, #001f3f, #0074D9);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .taskbar-item {
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .taskbar-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Notepad */
+        #notepad {
+            position: fixed;
+            top: 20%;
+            left: calc(50% - 200px);
+            width: 400px;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00FFFF;
+            box-shadow: 0 0 10px #00FFFF;
+            display: none;
+            z-index: 999;
+        }
+
+        #notepad textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 1rem;
+            padding: 10px;
+            box-sizing: border-box;
+            outline: none;
+            resize: none;
+        }
+
+        /* Taskbar Icon */
+        .taskbar-icon {
+            width: 30px;
+            height: 30px;
+            background: #0074D9;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 5px #00FFFF;
+        }
+
+        .taskbar-icon img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Neon Lines */
+        .neon-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, #0074D9, #00FFFF);
+            animation: glow 2s infinite alternate;
+        }
+
+        .neon-line.horizontal {
+            width: 100%;
+        }
+
+        .neon-line.vertical {
+            width: 2px;
+            height: 100%;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 10px #0074D9;
+            }
+            to {
+                box-shadow: 0 0 20px #00FFFF, 0 0 30px #00FFFF;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="taskbar">
+        <div class="taskbar-item" onclick="toggleNotepad()">
+            <div class="taskbar-icon">📝</div>
+            <span>Notepad</span>
+        </div>
+    </div>
+
+    <div id="notepad">
+        <textarea placeholder="Write your notes here..."></textarea>
+    </div>
+
+    <script>
+        function toggleNotepad() {
+            const notepad = document.getElementById('notepad');
+            notepad.style.display = notepad.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>
