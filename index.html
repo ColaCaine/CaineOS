@@ -55,7 +55,7 @@
 
         #notepad textarea {
             width: 100%;
-            height: 100%;
+            height: calc(100% - 40px);
             border: none;
             background: transparent;
             color: white;
@@ -64,6 +64,36 @@
             box-sizing: border-box;
             outline: none;
             resize: none;
+        }
+
+        #notepad .notepad-controls {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 10px;
+        }
+
+        #file-manager {
+            position: fixed;
+            top: 10%;
+            left: calc(50% - 250px);
+            width: 500px;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00FFFF;
+            box-shadow: 0 0 10px #00FFFF;
+            display: none;
+            z-index: 999;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            padding: 10px;
+            border-bottom: 1px solid #00FFFF;
+            cursor: pointer;
+        }
+
+        .file-item:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
 
         /* Taskbar Icon */
@@ -78,35 +108,32 @@
             box-shadow: 0 0 5px #00FFFF;
         }
 
-        .taskbar-icon img {
-            max-width: 100%;
-            max-height: 100%;
+        /* Menu */
+        #menu {
+            position: fixed;
+            bottom: 50px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00FFFF;
+            box-shadow: 0 0 10px #00FFFF;
+            display: none;
+            z-index: 1000;
+            padding: 10px;
         }
 
-        /* Neon Lines */
-        .neon-line {
-            position: absolute;
-            height: 2px;
-            background: linear-gradient(90deg, #0074D9, #00FFFF);
-            animation: glow 2s infinite alternate;
+        #menu button {
+            display: block;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #001f3f;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
         }
 
-        .neon-line.horizontal {
-            width: 100%;
-        }
-
-        .neon-line.vertical {
-            width: 2px;
-            height: 100%;
-        }
-
-        @keyframes glow {
-            from {
-                box-shadow: 0 0 10px #0074D9;
-            }
-            to {
-                box-shadow: 0 0 20px #00FFFF, 0 0 30px #00FFFF;
-            }
+        #menu button:hover {
+            background: #0074D9;
         }
     </style>
 </head>
@@ -116,16 +143,128 @@
             <div class="taskbar-icon">📝</div>
             <span>Notepad</span>
         </div>
+        <div class="taskbar-item" onclick="toggleFileManager()">
+            <div class="taskbar-icon">📁</div>
+            <span>File Manager</span>
+        </div>
+        <div class="taskbar-item" onclick="toggleMenu()">
+            <div class="taskbar-icon">⚙️</div>
+            <span>Menu</span>
+        </div>
     </div>
 
     <div id="notepad">
+        <div class="notepad-controls">
+            <button onclick="saveNote()">Save</button>
+        </div>
         <textarea placeholder="Write your notes here..."></textarea>
     </div>
 
+    <div id="file-manager">
+        <h3 style="text-align: center;">File Manager</h3>
+        <div id="file-list"></div>
+    </div>
+
+    <div id="menu">
+        <button onclick="exportState()">Export</button>
+        <button onclick="importState()">Import</button>
+        <button onclick="changeWallpaper()">Change Wallpaper</button>
+    </div>
+
     <script>
+        let files = JSON.parse(localStorage.getItem('files')) || {};
+        let osState = JSON.parse(localStorage.getItem('osState')) || {};
+
         function toggleNotepad() {
             const notepad = document.getElementById('notepad');
             notepad.style.display = notepad.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleFileManager() {
+            const fileManager = document.getElementById('file-manager');
+            fileManager.style.display = fileManager.style.display === 'none' ? 'block' : 'none';
+            updateFileList();
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function saveNote() {
+            const textarea = document.querySelector('#notepad textarea');
+            const content = textarea.value;
+            const fileName = prompt('Enter file name:', 'untitled');
+
+            if (!fileName) return;
+
+            let finalName = fileName.endsWith('.txt') ? fileName : `${fileName}.txt`;
+            let counter = 1;
+            while (files[finalName]) {
+                finalName = `${fileName} (${counter}).txt`;
+                counter++;
+            }
+
+            files[finalName] = content;
+            localStorage.setItem('files', JSON.stringify(files));
+            alert(`File "${finalName}" saved!`);
+        }
+
+        function updateFileList() {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+            for (const [name, content] of Object.entries(files)) {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.textContent = name;
+                fileItem.onclick = () => alert(`Content:\n\n${content}`);
+                fileList.appendChild(fileItem);
+            }
+        }
+
+        function exportState() {
+            const state = { files, osState };
+            const blob = new Blob([JSON.stringify(state)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'os_state.json';
+            link.click();
+        }
+
+        function importState() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = (event) => {
+                const file = event.target.files[0];
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const state = JSON.parse(reader.result);
+                    files = state.files || {};
+                    osState = state.osState || {};
+                    localStorage.setItem('files', JSON.stringify(files));
+                    localStorage.setItem('osState', JSON.stringify(osState));
+                    alert('State imported successfully!');
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function changeWallpaper() {
+            const url = prompt('Enter the URL of the wallpaper:');
+            if (url) {
+                document.body.style.background = `url(${url}) no-repeat center center fixed`;
+                document.body.style.backgroundSize = 'cover';
+                osState.wallpaper = url;
+                localStorage.setItem('osState', JSON.stringify(osState));
+            }
+        }
+
+        // Load wallpaper on startup
+        if (osState.wallpaper) {
+            document.body.style.background = `url(${osState.wallpaper}) no-repeat center center fixed`;
+            document.body.style.backgroundSize = 'cover';
         }
     </script>
 </body>
