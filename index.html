@@ -23,15 +23,20 @@
             background: linear-gradient(90deg, #001f3f, #0074D9);
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: space-around;
             padding: 0 10px;
             box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.5);
         }
 
         .taskbar-item {
             cursor: pointer;
-            padding: 10px;
-            border-radius: 5px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-radius: 10px;
             transition: background 0.3s;
         }
 
@@ -39,9 +44,32 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
-        /* Notepad */
-        #notepad {
-            position: fixed;
+        .taskbar-item.open::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 5px;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .taskbar-icon {
+            width: 30px;
+            height: 30px;
+            background: #0074D9;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 5px #00FFFF;
+        }
+
+        /* Application Window */
+        .app-window {
+            position: absolute;
             top: 20%;
             left: calc(50% - 200px);
             width: 400px;
@@ -53,218 +81,149 @@
             z-index: 999;
         }
 
+        .app-top-bar {
+            cursor: move;
+            background-color: #e0e0e0;
+            padding: 5px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            color: black;
+        }
+
+        .app-top-bar button {
+            margin-left: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .app-content {
+            padding: 10px;
+            height: calc(100% - 40px);
+            overflow: auto;
+        }
+
+        #file-manager {
+            width: 500px;
+            height: 400px;
+        }
+
         #notepad textarea {
             width: 100%;
-            height: calc(100% - 40px);
+            height: 100%;
             border: none;
             background: transparent;
             color: white;
             font-size: 1rem;
-            padding: 10px;
-            box-sizing: border-box;
-            outline: none;
             resize: none;
-        }
-
-        #notepad .notepad-controls {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 10px;
-        }
-
-        #file-manager {
-            position: fixed;
-            top: 10%;
-            left: calc(50% - 250px);
-            width: 500px;
-            height: 400px;
-            background: rgba(0, 0, 0, 0.9);
-            border: 2px solid #00FFFF;
-            box-shadow: 0 0 10px #00FFFF;
-            display: none;
-            z-index: 999;
-            overflow-y: auto;
-        }
-
-        .file-item {
-            padding: 10px;
-            border-bottom: 1px solid #00FFFF;
-            cursor: pointer;
-        }
-
-        .file-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Taskbar Icon */
-        .taskbar-icon {
-            width: 30px;
-            height: 30px;
-            background: #0074D9;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 5px #00FFFF;
-        }
-
-        /* Menu */
-        #menu {
-            position: fixed;
-            bottom: 50px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.9);
-            border: 2px solid #00FFFF;
-            box-shadow: 0 0 10px #00FFFF;
-            display: none;
-            z-index: 1000;
-            padding: 10px;
-        }
-
-        #menu button {
-            display: block;
-            margin-bottom: 10px;
-            padding: 10px;
-            background: #001f3f;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        #menu button:hover {
-            background: #0074D9;
+            outline: none;
         }
     </style>
 </head>
 <body>
     <div id="taskbar">
-        <div class="taskbar-item" onclick="toggleNotepad()">
+        <div class="taskbar-item" id="taskbar-notepad" onclick="toggleApp('notepad')">
             <div class="taskbar-icon">📝</div>
-            <span>Notepad</span>
         </div>
-        <div class="taskbar-item" onclick="toggleFileManager()">
+        <div class="taskbar-item" id="taskbar-file-manager" onclick="toggleApp('file-manager')">
             <div class="taskbar-icon">📁</div>
-            <span>File Manager</span>
         </div>
-        <div class="taskbar-item" onclick="toggleMenu()">
+        <div class="taskbar-item" id="taskbar-menu" onclick="toggleApp('menu')">
             <div class="taskbar-icon">⚙️</div>
-            <span>Menu</span>
         </div>
     </div>
 
-    <div id="notepad">
-        <div class="notepad-controls">
-            <button onclick="saveNote()">Save</button>
+    <div id="notepad" class="app-window">
+        <div class="app-top-bar" onmousedown="startDrag(event, 'notepad')">
+            <button onclick="minimizeApp('notepad')">—</button>
+            <button onclick="maximizeApp('notepad')">□</button>
+            <button onclick="closeApp('notepad')">X</button>
         </div>
-        <textarea placeholder="Write your notes here..."></textarea>
+        <div class="app-content">
+            <textarea placeholder="Write your notes here..."></textarea>
+        </div>
     </div>
 
-    <div id="file-manager">
-        <h3 style="text-align: center;">File Manager</h3>
-        <div id="file-list"></div>
+    <div id="file-manager" class="app-window">
+        <div class="app-top-bar" onmousedown="startDrag(event, 'file-manager')">
+            <button onclick="minimizeApp('file-manager')">—</button>
+            <button onclick="maximizeApp('file-manager')">□</button>
+            <button onclick="closeApp('file-manager')">X</button>
+        </div>
+        <div class="app-content">
+            <h3>File Manager</h3>
+            <div id="file-list"></div>
+        </div>
     </div>
 
-    <div id="menu">
-        <button onclick="exportState()">Export</button>
-        <button onclick="importState()">Import</button>
-        <button onclick="changeWallpaper()">Change Wallpaper</button>
+    <div id="menu" class="app-window">
+        <div class="app-top-bar" onmousedown="startDrag(event, 'menu')">
+            <button onclick="minimizeApp('menu')">—</button>
+            <button onclick="maximizeApp('menu')">□</button>
+            <button onclick="closeApp('menu')">X</button>
+        </div>
+        <div class="app-content">
+            <button onclick="exportState()">Export</button>
+            <button onclick="importState()">Import</button>
+            <button onclick="changeWallpaper()">Change Wallpaper</button>
+        </div>
     </div>
 
     <script>
-        let files = JSON.parse(localStorage.getItem('files')) || {};
-        let osState = JSON.parse(localStorage.getItem('osState')) || {};
+        const apps = ['notepad', 'file-manager', 'menu'];
+        let isDragging = false, dragOffsetX = 0, dragOffsetY = 0, draggedApp = null;
 
-        function toggleNotepad() {
-            const notepad = document.getElementById('notepad');
-            notepad.style.display = notepad.style.display === 'none' ? 'block' : 'none';
+        function toggleApp(appId) {
+            const app = document.getElementById(appId);
+            app.style.display = app.style.display === 'none' ? 'block' : 'none';
+            document.getElementById(`taskbar-${appId}`).classList.toggle('open', app.style.display === 'block');
         }
 
-        function toggleFileManager() {
-            const fileManager = document.getElementById('file-manager');
-            fileManager.style.display = fileManager.style.display === 'none' ? 'block' : 'none';
-            updateFileList();
+        function minimizeApp(appId) {
+            document.getElementById(appId).style.display = 'none';
         }
 
-        function toggleMenu() {
-            const menu = document.getElementById('menu');
-            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function saveNote() {
-            const textarea = document.querySelector('#notepad textarea');
-            const content = textarea.value;
-            const fileName = prompt('Enter file name:', 'untitled');
-
-            if (!fileName) return;
-
-            let finalName = fileName.endsWith('.txt') ? fileName : `${fileName}.txt`;
-            let counter = 1;
-            while (files[finalName]) {
-                finalName = `${fileName} (${counter}).txt`;
-                counter++;
-            }
-
-            files[finalName] = content;
-            localStorage.setItem('files', JSON.stringify(files));
-            alert(`File "${finalName}" saved!`);
-        }
-
-        function updateFileList() {
-            const fileList = document.getElementById('file-list');
-            fileList.innerHTML = '';
-            for (const [name, content] of Object.entries(files)) {
-                const fileItem = document.createElement('div');
-                fileItem.className = 'file-item';
-                fileItem.textContent = name;
-                fileItem.onclick = () => alert(`Content:\n\n${content}`);
-                fileList.appendChild(fileItem);
+        function maximizeApp(appId) {
+            const app = document.getElementById(appId);
+            if (app.classList.contains('maximized')) {
+                app.classList.remove('maximized');
+                app.style = ''; // Revert to original size and position
+            } else {
+                app.classList.add('maximized');
+                app.style.top = '0';
+                app.style.left = '0';
+                app.style.width = 'calc(100% - 10px)';
+                app.style.height = 'calc(100% - 60px)'; // Leaves space for taskbar
             }
         }
 
-        function exportState() {
-            const state = { files, osState };
-            const blob = new Blob([JSON.stringify(state)], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'os_state.json';
-            link.click();
+        function closeApp(appId) {
+            const app = document.getElementById(appId);
+            app.style.display = 'none';
+            document.getElementById(`taskbar-${appId}`).classList.remove('open');
         }
 
-        function importState() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'application/json';
-            input.onchange = (event) => {
-                const file = event.target.files[0];
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const state = JSON.parse(reader.result);
-                    files = state.files || {};
-                    osState = state.osState || {};
-                    localStorage.setItem('files', JSON.stringify(files));
-                    localStorage.setItem('osState', JSON.stringify(osState));
-                    alert('State imported successfully!');
-                };
-                reader.readAsText(file);
-            };
-            input.click();
+        function startDrag(event, appId) {
+            isDragging = true;
+            draggedApp = document.getElementById(appId);
+            dragOffsetX = event.clientX - draggedApp.offsetLeft;
+            dragOffsetY = event.clientY - draggedApp.offsetTop;
+            document.addEventListener('mousemove', dragApp);
+            document.addEventListener('mouseup', stopDrag);
         }
 
-        function changeWallpaper() {
-            const url = prompt('Enter the URL of the wallpaper:');
-            if (url) {
-                document.body.style.background = `url(${url}) no-repeat center center fixed`;
-                document.body.style.backgroundSize = 'cover';
-                osState.wallpaper = url;
-                localStorage.setItem('osState', JSON.stringify(osState));
-            }
+        function dragApp(event) {
+            if (!isDragging || !draggedApp) return;
+            draggedApp.style.left = `${event.clientX - dragOffsetX}px`;
+            draggedApp.style.top = `${event.clientY - dragOffsetY}px`;
         }
 
-        // Load wallpaper on startup
-        if (osState.wallpaper) {
-            document.body.style.background = `url(${osState.wallpaper}) no-repeat center center fixed`;
-            document.body.style.backgroundSize = 'cover';
+        function stopDrag() {
+            isDragging = false;
+            draggedApp = null;
+            document.removeEventListener('mousemove', dragApp);
+            document.removeEventListener('mouseup', stopDrag);
         }
     </script>
 </body>
