@@ -41,7 +41,7 @@
 
         /* Notepad */
         #notepad {
-            position: fixed;
+            position: absolute;
             top: 20%;
             left: calc(50% - 200px);
             width: 400px;
@@ -70,6 +70,16 @@
             display: flex;
             justify-content: space-between;
             padding: 5px 10px;
+        }
+
+        .resize-handle {
+            width: 15px;
+            height: 15px;
+            background: #00FFFF;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            cursor: se-resize;
         }
 
         #file-manager {
@@ -139,17 +149,14 @@
 </head>
 <body>
     <div id="taskbar">
+        <div class="taskbar-item" onclick="toggleMenu()">
+            <div class="taskbar-icon">⚙️</div>
+        </div>
         <div class="taskbar-item" onclick="toggleNotepad()">
             <div class="taskbar-icon">📝</div>
-            <span>Notepad</span>
         </div>
         <div class="taskbar-item" onclick="toggleFileManager()">
             <div class="taskbar-icon">📁</div>
-            <span>File Manager</span>
-        </div>
-        <div class="taskbar-item" onclick="toggleMenu()">
-            <div class="taskbar-icon">⚙️</div>
-            <span>Menu</span>
         </div>
     </div>
 
@@ -158,6 +165,7 @@
             <button onclick="saveNote()">Save</button>
         </div>
         <textarea placeholder="Write your notes here..."></textarea>
+        <div class="resize-handle"></div>
     </div>
 
     <div id="file-manager">
@@ -210,6 +218,13 @@
             alert(`File "${finalName}" saved!`);
         }
 
+        function openFileInNotepad(content) {
+            const notepad = document.getElementById('notepad');
+            const textarea = document.querySelector('#notepad textarea');
+            textarea.value = content; // Set the file content in the Notepad's textarea
+            notepad.style.display = 'block'; // Show the Notepad app
+        }
+
         function updateFileList() {
             const fileList = document.getElementById('file-list');
             fileList.innerHTML = '';
@@ -217,7 +232,7 @@
                 const fileItem = document.createElement('div');
                 fileItem.className = 'file-item';
                 fileItem.textContent = name;
-                fileItem.onclick = () => alert(`Content:\n\n${content}`);
+                fileItem.onclick = () => openFileInNotepad(content); // Open file in Notepad
                 fileList.appendChild(fileItem);
             }
         }
@@ -260,6 +275,43 @@
                 localStorage.setItem('osState', JSON.stringify(osState));
             }
         }
+
+        // Drag and Drop for Notepad
+        let isDragging = false, isResizing = false, offsetX, offsetY;
+
+        notepad.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('resize-handle')) return; // Ignore resize handle
+            isDragging = true;
+            offsetX = e.clientX - notepad.offsetLeft;
+            offsetY = e.clientY - notepad.offsetTop;
+            document.body.style.userSelect = 'none'; // Disable text selection while dragging
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                notepad.style.left = `${e.clientX - offsetX}px`;
+                notepad.style.top = `${e.clientY - offsetY}px`;
+            }
+            if (isResizing) {
+                const newWidth = e.clientX - notepad.offsetLeft;
+                const newHeight = e.clientY - notepad.offsetTop;
+                notepad.style.width = `${newWidth}px`;
+                notepad.style.height = `${newHeight}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            isResizing = false;
+            document.body.style.userSelect = ''; // Re-enable text selection
+        });
+
+        // Resizing for Notepad
+        const resizeHandle = document.querySelector('.resize-handle');
+        resizeHandle.addEventListener('mousedown', () => {
+            isResizing = true;
+            document.body.style.userSelect = 'none'; // Disable text selection while resizing
+        });
 
         // Load wallpaper on startup
         if (osState.wallpaper) {
